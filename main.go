@@ -30,9 +30,11 @@ var Tickers map[string]Ticker
 func init() {
 	Tickers = map[string]Ticker{
 		"btc":  {PubkeyVersion: 0, PrikeyVersion: 128, ScriptHashVersion: 5},
+		"ltc":  {PubkeyVersion: 48, PrikeyVersion: 176, ScriptHashVersion: 50},
 		"zny":  {PubkeyVersion: 81, PrikeyVersion: 128, ScriptHashVersion: 5},
 		"mona": {PubkeyVersion: 50, PrikeyVersion: 176, ScriptHashVersion: 55},
 		"tbtc": {PubkeyVersion: 111, PrikeyVersion: 239, ScriptHashVersion: 196},
+		"tltc": {PubkeyVersion: 111, PrikeyVersion: 239, ScriptHashVersion: 58},
 	}
 }
 
