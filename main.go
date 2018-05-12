@@ -274,7 +274,7 @@ func makeScript(trans *Trans, sigs [][]byte, pubkey, sc, secret []byte) ([][]byt
 	return scs, nil
 }
 
-func sign(privateKey string) error {
+func sign(privateKey string, j bool) error {
 	trans, err := readTrans(os.Stdin)
 	if err != nil {
 		return err
@@ -370,7 +370,18 @@ func sign(privateKey string) error {
 
 	rawTx := hex.EncodeToString(tx)
 
-	fmt.Println(rawTx)
+	if j {
+		body := map[string]string{
+			"rawtx": rawTx,
+		}
+		json, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(json))
+	} else {
+		fmt.Println(rawTx)
+	}
 
 	/* */
 
@@ -449,10 +460,12 @@ func main() {
 	var err error
 
 	var s bool
+	var j bool
 	var key string
 	var ticker string
 
 	flag.BoolVar(&s, "s", true, "Generate a secret")
+	flag.BoolVar(&j, "j", false, "Output json format")
 	flag.StringVar(&ticker, "t", "", "Ticker for generating key pair")
 	flag.StringVar(&key, "k", "", "Private Key for signing")
 
@@ -461,7 +474,7 @@ func main() {
 	if ticker != "" {
 		err = generate(ticker)
 	} else if key != "" {
-		err = sign(key)
+		err = sign(key, j)
 	} else if s {
 		err = secret()
 	}
