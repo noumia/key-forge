@@ -305,7 +305,7 @@ func sign(privateKey string) error {
 			return err
 		}
 		if ver != verSECRET {
-			return errors.New("malformed.key")
+			return errors.New("malformed.secret")
 		}
 		secret = sec
 	} else {
@@ -320,11 +320,11 @@ func sign(privateKey string) error {
 		return err
 	}
 
-	if ver != t.PrikeyVersion || (len(keyBytes) != 32 && len(keyBytes) != 33) {
+	if ver != t.PrikeyVersion {
 		return errors.New("malformed.key")
 	}
 
-	key, err := NewSigner(keyBytes[:32])
+	key, err := NewSigner(keyBytes)
 	if err != nil {
 		return err
 	}
@@ -334,7 +334,13 @@ func sign(privateKey string) error {
 	pubkey := CheckEncode(pubkeyHash, t.PubkeyVersion)
 
 	if pubkey != trans.PubkeyHash {
-		return errors.New("mismatch.pubkey")
+		pubBytes = key.PublicBytesAlt()
+		pubkeyHash = Hash160(pubBytes)
+		pubkey = CheckEncode(pubkeyHash, t.PubkeyVersion)
+
+		if pubkey != trans.PubkeyHash {
+			return errors.New("mismatch.pubkey")
+		}
 	}
 
 	/* */

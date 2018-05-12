@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"errors"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
@@ -35,6 +36,7 @@ type Signer interface {
 	PrivateBytes() []byte
 	PublicBytes() []byte
 	Sign(data []byte) ([]byte, error)
+	PublicBytesAlt() []byte
 }
 
 // NewKey generate key pair
@@ -43,26 +45,50 @@ func NewKey() (Signer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &signer256{key, key.PubKey()}, nil
+	return &signer256{key, key.PubKey(), true}, nil
 }
 
 // NewSigner new signer
 func NewSigner(data []byte) (Signer, error) {
-	key, pub := btcec.PrivKeyFromBytes(btcec.S256(), data)
-	return &signer256{key, pub}, nil
+	cmp := false
+	if len(data) == 33 {
+		if data[32] == 0x01 {
+			cmp = true
+		} else {
+			return nil, errors.New("malformed.key")
+		}
+	} else if len(data) != 32 {
+		return nil, errors.New("malformed.key")
+	}
+	key, pub := btcec.PrivKeyFromBytes(btcec.S256(), data[:32])
+	return &signer256{key, pub, cmp}, nil
 }
 
 type signer256 struct {
 	key *btcec.PrivateKey
 	pub *btcec.PublicKey
+	cmp bool
 }
 
 func (t *signer256) PrivateBytes() []byte {
+	if t.cmp {
+		return append(t.key.Serialize(), 0x01)
+	}
 	return t.key.Serialize()
 }
 
 func (t *signer256) PublicBytes() []byte {
-	return t.pub.SerializeCompressed()
+	if t.cmp {
+		return t.pub.SerializeCompressed()
+	}
+	return t.pub.SerializeUncompressed()
+}
+
+func (t *signer256) PublicBytesAlt() []byte {
+	if !t.cmp {
+		return t.pub.SerializeCompressed()
+	}
+	return t.pub.SerializeUncompressed()
 }
 
 func (t *signer256) Sign(data []byte) ([]byte, error) {
