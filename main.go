@@ -105,6 +105,7 @@ func writeV(buf *bytes.Buffer, v int) {
 	if v < 0xfd {
 		buf.WriteByte(byte(v))
 	} else if v <= 0xffff {
+		buf.WriteByte(0xfd)
 		buf.WriteByte(byte(v & 0xff))
 		buf.WriteByte(byte((v >> 8) & 0xff))
 	} else {
@@ -121,9 +122,13 @@ func writeP(buf *bytes.Buffer, bytes []byte) {
 	sz := len(bytes)
 	if sz <= 75 {
 		buf.WriteByte(byte(sz))
-	} else if sz < 0xff {
+	} else if sz <= 0xff {
 		buf.WriteByte(0x4c) // OP_PUSHDATA1
 		buf.WriteByte(byte(sz))
+	} else if sz <= 0xffff {
+		buf.WriteByte(0x4d) // OP_PUSHDATA2
+		buf.WriteByte(byte(sz & 0xff))
+		buf.WriteByte(byte((sz >> 8) & 0xff))
 	} else {
 		log.Fatal("large.P")
 	}
